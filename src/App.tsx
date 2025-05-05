@@ -18,6 +18,11 @@ import SalesPage from "./pages/sales/SalesPage";
 import SaleForm from "./pages/sales/SaleForm";
 import SaleView from "./pages/sales/SaleView";
 
+// Страницы отчетов
+import ReportsPage from "./pages/reports/ReportsPage";
+import ReportForm from "./pages/reports/ReportForm";
+import ReportView from "./pages/reports/ReportView";
+
 // Создаем клиент для запросов
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -49,6 +54,12 @@ const App = () => (
             <Route path="/sales/create" element={<SaleForm mode="create" />} />
             <Route path="/sales/edit/:id" element={<SaleForm mode="edit" />} />
             <Route path="/sales/view/:id" element={<SaleView />} />
+            
+            {/* Маршруты для отчетов */}
+            <Route path="/reports" element={<ReportsPage />} />
+            <Route path="/reports/create" element={<ReportForm mode="create" />} />
+            <Route path="/reports/edit/:id" element={<ReportForm mode="edit" />} />
+            <Route path="/reports/view/:id" element={<ReportView />} />
             
             {/* Другие маршруты */}
             <Route path="*" element={<NotFound />} />

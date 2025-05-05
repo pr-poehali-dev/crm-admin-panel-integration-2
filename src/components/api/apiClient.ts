@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 
 // Базовый адрес API
@@ -25,8 +24,22 @@ export interface Sale {
     name: string;
     quantity: number;
     price: number;
-  }>;
+  }>
   date: string;
+}
+
+export interface Report {
+  id: string;
+  title: string;
+  type: 'sales' | 'clients' | 'products' | 'financial';
+  dateRange: {
+    from: string;
+    to: string;
+  };
+  createdAt: string;
+  data: any; // Данные отчета могут иметь разную структуру в зависимости от типа
+  status: 'draft' | 'published';
+  description?: string;
 }
 
 export interface DashboardStats {
