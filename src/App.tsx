@@ -15,6 +15,8 @@ import ClientView from "./pages/clients/ClientView";
 
 // Страницы продаж
 import SalesPage from "./pages/sales/SalesPage";
+import SaleForm from "./pages/sales/SaleForm";
+import SaleView from "./pages/sales/SaleView";
 
 // Создаем клиент для запросов
 const queryClient = new QueryClient({
@@ -44,6 +46,9 @@ const App = () => (
             
             {/* Маршруты для продаж */}
             <Route path="/sales" element={<SalesPage />} />
+            <Route path="/sales/create" element={<SaleForm mode="create" />} />
+            <Route path="/sales/edit/:id" element={<SaleForm mode="edit" />} />
+            <Route path="/sales/view/:id" element={<SaleView />} />
             
             {/* Другие маршруты */}
             <Route path="*" element={<NotFound />} />

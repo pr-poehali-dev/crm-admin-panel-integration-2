@@ -4,8 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { 
   MoreHorizontal, 
   PlusCircle, 
-  Search, 
   Edit, 
+  Eye,
   Trash, 
   CheckCircle, 
   Clock, 
@@ -19,7 +19,6 @@ import {
   CardTitle 
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -38,11 +37,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Sale, apiClient } from "@/components/api/apiClient";
 import { useToast } from "@/components/ui/toast";
+import { DataTable, DataTableColumn } from "@/components/ui/data-table";
 
 const SalesPage = () => {
   const [sales, setSales] = useState<Sale[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
   const [deleteSaleId, setDeleteSaleId] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -146,14 +145,87 @@ const SalesPage = () => {
     }).format(amount);
   };
 
-  const filteredSales = sales.filter(sale => 
-    // Поиск по ID продажи или ID клиента
-    sale.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    sale.clientId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    // Поиск по статусу (текстовое представление)
-    (sale.status === 'completed' && 'завершена'.includes(searchQuery.toLowerCase())) ||
-    (sale.status === 'pending' && 'в процессе'.includes(searchQuery.toLowerCase())) ||
-    (sale.status === 'cancelled' && 'отменена'.includes(searchQuery.toLowerCase()))
+  // Определяем столбцы таблицы
+  const columns: DataTableColumn<Sale>[] = [
+    {
+      key: "id",
+      header: "ID продажи",
+      sortable: true
+    },
+    {
+      key: "clientId",
+      header: "ID клиента",
+      sortable: true
+    },
+    {
+      key: "amount",
+      header: "Сумма",
+      sortable: true,
+      cell: (sale) => formatAmount(sale.amount)
+    },
+    {
+      key: "status",
+      header: "Статус",
+      sortable: true,
+      cell: (sale) => {
+        const { icon, text, className } = getStatusInfo(sale.status);
+        return (
+          <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full ${className}`}>
+            {icon}
+            {text}
+          </span>
+        );
+      }
+    },
+    {
+      key: "date",
+      header: "Дата",
+      sortable: true,
+      cell: (sale) => formatDate(sale.date),
+      hidden: window.innerWidth < 768 // Скрываем на мобильных
+    }
+  ];
+
+  // Определяем фильтры
+  const filterOptions = [
+    {
+      key: "status",
+      label: "Статус",
+      options: [
+        { value: "completed", label: "Завершена" },
+        { value: "pending", label: "В процессе" },
+        { value: "cancelled", label: "Отменена" }
+      ]
+    }
+  ];
+
+  // Рендер действий для строки
+  const renderRowActions = (sale: Sale) => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="sm">
+          <MoreHorizontal className="h-4 w-4" />
+          <span className="sr-only">Действия</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={() => navigate(`/sales/view/${sale.id}`)}>
+          <Eye className="mr-2 h-4 w-4" />
+          Просмотр
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleEdit(sale.id)}>
+          <Edit className="mr-2 h-4 w-4" />
+          Редактировать
+        </DropdownMenuItem>
+        <DropdownMenuItem 
+          className="text-red-600 focus:text-red-600"
+          onClick={() => setDeleteSaleId(sale.id)}
+        >
+          <Trash className="mr-2 h-4 w-4" />
+          Удалить
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 
   return (
@@ -166,100 +238,24 @@ const SalesPage = () => {
               Управляйте продажами и заказами в вашей системе
             </CardDescription>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-              <Input
-                type="search"
-                placeholder="Поиск продаж..."
-                className="pl-9 w-full md:w-auto min-w-[200px]"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            <Button 
-              onClick={() => navigate("/sales/create")} 
-              className="whitespace-nowrap"
-            >
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Добавить продажу
-            </Button>
-          </div>
+          <Button 
+            onClick={() => navigate("/sales/create")} 
+            className="whitespace-nowrap"
+          >
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Добавить продажу
+          </Button>
         </CardHeader>
         <CardContent>
-          {loading ? (
-            <div className="flex justify-center items-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            </div>
-          ) : (
-            <div className="rounded-md border overflow-hidden">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50 dark:bg-gray-800">
-                  <tr>
-                    <th className="px-4 py-3 text-left font-medium text-gray-500">ID продажи</th>
-                    <th className="px-4 py-3 text-left font-medium text-gray-500">ID клиента</th>
-                    <th className="px-4 py-3 text-left font-medium text-gray-500">Сумма</th>
-                    <th className="px-4 py-3 text-left font-medium text-gray-500">Статус</th>
-                    <th className="px-4 py-3 text-left font-medium text-gray-500 hidden md:table-cell">Дата</th>
-                    <th className="px-4 py-3 text-right font-medium text-gray-500">Действия</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {filteredSales.length > 0 ? (
-                    filteredSales.map((sale) => {
-                      const { icon, text, className } = getStatusInfo(sale.status);
-                      return (
-                        <tr key={sale.id} className="bg-white dark:bg-gray-700">
-                          <td className="px-4 py-3">{sale.id}</td>
-                          <td className="px-4 py-3">{sale.clientId}</td>
-                          <td className="px-4 py-3">{formatAmount(sale.amount)}</td>
-                          <td className="px-4 py-3">
-                            <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full ${className}`}>
-                              {icon}
-                              {text}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 hidden md:table-cell">{formatDate(sale.date)}</td>
-                          <td className="px-4 py-3 text-right">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                  <span className="sr-only">Открыть меню</span>
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => navigate(`/sales/view/${sale.id}`)}>
-                                  Просмотр
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleEdit(sale.id)}>
-                                  <Edit className="mr-2 h-4 w-4" />
-                                  Редактировать
-                                </DropdownMenuItem>
-                                <DropdownMenuItem 
-                                  className="text-red-600 focus:text-red-600"
-                                  onClick={() => setDeleteSaleId(sale.id)}
-                                >
-                                  <Trash className="mr-2 h-4 w-4" />
-                                  Удалить
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  ) : (
-                    <tr className="bg-white dark:bg-gray-700">
-                      <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
-                        {searchQuery ? 'Продажи не найдены' : 'Нет добавленных продаж'}
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          )}
+          <DataTable
+            data={sales}
+            columns={columns}
+            loading={loading}
+            searchPlaceholder="Поиск продаж..."
+            noDataMessage="Нет добавленных продаж"
+            filterOptions={filterOptions}
+            renderRowActions={renderRowActions}
+          />
         </CardContent>
       </Card>
 
