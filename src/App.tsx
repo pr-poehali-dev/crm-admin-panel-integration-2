@@ -8,6 +8,14 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import DashboardLayout from "./components/DashboardLayout";
 
+// Клиентские страницы
+import ClientsPage from "./pages/clients/ClientsPage";
+import ClientForm from "./pages/clients/ClientForm";
+import ClientView from "./pages/clients/ClientView";
+
+// Страницы продаж
+import SalesPage from "./pages/sales/SalesPage";
+
 // Создаем клиент для запросов
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -25,16 +33,21 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route 
-            path="/" 
-            element={
-              <DashboardLayout>
-                <Index />
-              </DashboardLayout>
-            } 
-          />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
+          <Route element={<DashboardLayout />}>
+            <Route path="/" element={<Index />} />
+            
+            {/* Маршруты для клиентов */}
+            <Route path="/clients" element={<ClientsPage />} />
+            <Route path="/clients/create" element={<ClientForm mode="create" />} />
+            <Route path="/clients/edit/:id" element={<ClientForm mode="edit" />} />
+            <Route path="/clients/view/:id" element={<ClientView />} />
+            
+            {/* Маршруты для продаж */}
+            <Route path="/sales" element={<SalesPage />} />
+            
+            {/* Другие маршруты */}
+            <Route path="*" element={<NotFound />} />
+          </Route>
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
